@@ -1,0 +1,652 @@
+---
+title: "Zwischenumfrage Wintersemester 21/22"
+institute: "InOne Consult"
+date: "`r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, out.width = '100%')
+```
+
+```{r}
+source("helper_functions.R")
+```
+
+
+```{r}
+library(tidyverse)
+library(magrittr)
+library(kableExtra)
+library(here)
+```
+
+```{r message=FALSE, warning=FALSE}
+df <- read_csv("data/umfrage.csv")
+
+zufriedenheit_allgemein <- df[2:4]
+vorstand <- df[5:10]
+ressort <- df[11:16]
+sitzungen <- df[17:19]
+teambuilding <- df[20:24]
+weiterbildung <- df[25:29]
+projektleiter <- df[30:37]
+feedback <- df[38]
+```
+
+
+
+class: inverse, center, middle
+
+# Allgemeine Zufriedenheit
+
+---
+
+## `r colnames(zufriedenheit_allgemein)[1] %>% substring(4)`
+
+```{r}
+zufriedenheit_allgemein_mean <- zufriedenheit_allgemein %>% 
+  extract2(1) %>% 
+  mean()
+```
+
+
+```{r}
+
+promoter <- zufriedenheit_allgemein %>% 
+  extract2(1) %>% 
+  larger_smaller_than(8) %>% 
+  mean()
+
+passives <- zufriedenheit_allgemein %>% 
+  extract2(1) %>% 
+  between(7, 8) %>% 
+  mean()
+
+detractor <- zufriedenheit_allgemein %>% 
+  extract2(1) %>% 
+  larger_smaller_than(7, larger = FALSE) %>% 
+  mean()
+
+nps <- promoter - detractor
+```
+
+- Die durchschnittliche Bewertung liegt bei `r round(zufriedenheit_allgemein_mean, 2)` von 10.
+
+- Der Anteil an Promotern, Passives und Detractors liegt bei jeweils `r scales::percent(promoter, 0.1)`, `r scales::percent(passives, 0.1)`, `r scales::percent(detractor, 0.1)`
+
+- Daraus ergibt sich ein NPS von `r scales::percent(nps, 0.1)`.
+
+
+---
+
+## `r colnames(zufriedenheit_allgemein)[2] %>% substring(4) %>% str_sub(1,nchar(.)-4)`
+
+
+```{r}
+zufriedenheit_allgemein %>% 
+  extract2(2) %>% 
+  na.omit() %>% 
+  knitr::kable(col.names = NULL) %>% 
+  kable_styling(font_size = 12)
+```
+
+---
+
+## `r colnames(zufriedenheit_allgemein)[3] %>% substring(4)`
+
+```{r}
+zufriedenheit_allgemein %>% 
+  extract2(3) %>% 
+  na.omit() %>% 
+  knitr::kable(col.names = NULL) %>% 
+  kable_styling(font_size = 12)
+```
+
+
+---
+
+class: inverse, center, middle
+
+# Vorstand
+
+---
+
+## `r colnames(vorstand)[1] %>% substring(4)`
+
+```{r}
+vorstand_mean <- vorstand %>% 
+  extract2(1) %>% 
+  mean()
+```
+
+- Die durchschnittliche Bewertung liegt bei `r round(vorstand_mean, 2)`
+
+
+
+
+```{r out.width='70%', fig.asp=2/3}
+v1_plot <- vorstand %>% 
+  extract2(1) %>% 
+  data_frame(score = .) %>% 
+  mutate(score = factor(score)) %>% 
+  count(score) %>% 
+  mutate(prop = (n / sum(n)) * 100) %>% 
+  ggplot(aes(score, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  theme_classic() +
+  scale_y_continuous(breaks = seq(0,70,5)) +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18),
+        axis.title = element_text(size = 16)) +
+  xlab("Zufriedenheit von 1 (sehr unzufrieden) bis 5 (sehr zufrieden)") +
+  ylab("Anteil in %") +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), stat = "identity", vjust = -.5), size = 5)
+
+
+ggsave(here("plots/v1_plot.svg"), v1_plot, width = 12, height = 6)
+v1_plot
+```
+---
+
+## `r colnames(vorstand)[2] %>% substring(4) %>% str_sub(1,nchar(.)-4)`
+
+```{r}
+vorstand %>% 
+  extract2(2) %>% 
+  na.omit() %>% 
+  knitr::kable(col.names = NULL) %>% 
+  column_spec(1, width_min = '7.8in') %>% 
+  kable_styling(font_size = 12) 
+```
+
+---
+
+## `r colnames(vorstand)[3] %>% substring(4)`
+
+```{r}
+vorstand_2_mean <- vorstand %>% 
+  extract2(3) %>% 
+  mean()
+```
+- Die durchschnittliche Bewertung liegt bei `r round(vorstand_2_mean, 2)`
+
+```{r out.width='70%', fig.asp=2/3}
+v2_plot <- vorstand %>% 
+  extract2(3) %>% 
+  data_frame(score = .) %>% 
+  mutate(score = factor(score)) %>% 
+  count(score) %>% 
+  mutate(prop = (n / sum(n)) * 100) %>% 
+  ggplot(aes(score, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  theme_classic() +
+  scale_y_continuous(breaks = seq(0,70,5)) +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18),
+        axis.title = element_text(size = 16)) +
+  xlab("Zufriedenheit von 1 (sehr unzufrieden) bis 5 (sehr zufrieden)") +
+  ylab("Anteil in %") +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), stat = "identity", vjust = -.5), size = 5)
+
+
+ggsave(here("plots/v2_plot.svg"), v2_plot, width = 12, height = 6)
+v2_plot
+```
+
+
+---
+
+## `r colnames(vorstand)[4] %>% substring(4) %>% str_sub(1,nchar(.)-4)`
+
+```{r}
+vorstand %>% 
+  extract2(4) %>% 
+  na.omit() %>% 
+  knitr::kable(col.names = NULL) %>% 
+  kable_styling(font_size = 12)
+```
+
+---
+
+## `r colnames(vorstand)[5] %>% substring(4)`
+
+```{r}
+vorstand_info_mean <- vorstand %>% 
+  extract2(5) %>% 
+  mean()
+```
+
+- Die durchschnittliche Bewertung liegt bei `r round(vorstand_info_mean, 2)`
+
+```{r out.width='70%', fig.asp=2/3}
+vorstand_info_plot <- vorstand %>% 
+  extract2(5) %>% 
+  data_frame(score = .) %>% 
+  mutate(score = factor(score)) %>% 
+  count(score) %>% 
+  mutate(prop = (n / sum(n)) * 100) %>% 
+  ggplot(aes(score, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  theme_classic() +
+  scale_y_continuous(breaks = seq(0,70,5)) +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18),
+        axis.title = element_text(size = 16)) +
+  xlab("Zufriedenheit von 1 (sehr unzufrieden) bis 5 (sehr zufrieden)") +
+  ylab("Anteil in %") +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), stat = "identity", vjust = -.5), size = 5)
+
+
+ggsave(here("plots/vorstand_info_plot.svg"), vorstand_info_plot, width = 12, height = 6)
+vorstand_info_plot
+```
+
+---
+
+## `r colnames(vorstand)[6] %>% substring(4)`
+
+```{r}
+vorstand %>% 
+  extract2(6) %>% 
+  na.omit() %>% 
+  knitr::kable(col.names = NULL) %>% 
+  kable_styling(font_size = 12)
+```
+
+---
+
+class: inverse, center, middle
+
+# Ressort Insgesamt
+
+
+---
+
+## `r colnames(ressort)[1] %>% substring(4)`
+
+```{r}
+ressort <- ressort %>% 
+  rename(ressort_group = `1. In welchem Ressort bist Du?`)
+```
+
+```{r out.width='70%', fig.asp=2/3}
+ressort %>% 
+  extract(1) %>% 
+  ggplot(aes(ressort_group)) +
+  geom_bar(width = 0.6, fill = "royalblue4") +
+  theme_classic() +
+  scale_y_continuous(breaks = seq(0,10,1)) +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18)) +
+  xlab("") +
+  ylab("") +
+  coord_flip()
+```
+
+
+```{r eval = FALSE}
+ressortverteilung_plot <- ressort %>% 
+  count(ressort_group) %>% 
+  mutate(prop = n / sum(n)) %>% 
+  ggplot(aes(ressort_group, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  theme_classic() +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18)) +
+  scale_y_continuous(labels = scales::percent) +
+  xlab("") +
+  ylab("") +
+  geom_text(aes(label = scales::percent(prop), stat = "identity", vjust = -.5))
+
+ggsave(here("plots/ressortverteilung.svg"), ressortverteilung_plot, width = 12, height = 6)
+ressortverteilung_plot
+```
+
+
+---
+
+## `r colnames(ressort)[2] %>% substring(4)`
+
+```{r}
+ressort_mean <- ressort %>% 
+  extract2(2) %>% 
+  mean()
+```
+
+- Die durchschnittliche Bewertung liegt bei `r round(ressort_mean, 2)`
+
+```{r out.width='70%', fig.asp=2/3}
+ressort_zufriedenheit_plot <- ressort %>% 
+  select(1,2) %>% 
+  group_by(ressort_group) %>% 
+  summarise(score = mean(`2. Wie zufrieden bist Du mit Deinem Ressort insgesamt?`),
+            n = n()) %>% 
+  ggplot(aes(ressort_group, score)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  theme_classic() +
+  scale_y_continuous(breaks = seq(0,10,1)) +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18)) +
+  xlab("") +
+  ylab("") +
+  coord_flip() +
+  geom_text(aes(label = round(score, 2), stat = "identity", hjust = 2.5), color = "white", size = 4) +
+  geom_hline(yintercept = 5, linetype = "dotted")
+
+ggsave(here("plots/ressort_zufriedenheit_plot.svg"), ressort_zufriedenheit_plot, width = 12, height = 6)
+ressort_zufriedenheit_plot
+```
+
+
+---
+
+## Ressort Akquise
+
+```{r out.width='70%', fig.asp=2/3}
+ressort_begründungen(ressort, "Akquise")
+```
+
+---
+
+## Ressort Finanzen und Recht
+
+```{r out.width='70%', fig.asp=2/3}
+ressort_begründungen(ressort, "Finanzen und Recht")
+```
+
+---
+
+## Ressort Marketing
+
+```{r out.width='70%', fig.asp=2/3}
+ressort_begründungen(ressort, "Marketing")
+```
+
+---
+
+## Ressort Personal
+
+```{r out.width='70%', fig.asp=2/3}
+ressort_begründungen(ressort, "Personal")
+```
+
+---
+
+## Ressort Qualitätsmanagement
+
+```{r out.width='70%', fig.asp=2/3}
+ressort_begründungen(ressort, "Qualitätsmanagement")
+```
+
+---
+
+
+
+class: inverse, center, middle
+
+# Ressortleiter
+
+
+---
+
+
+## `r colnames(ressort)[5] %>% substring(4)`
+
+```{r}
+ressort_leiter_mean <- ressort %>% 
+  extract2(5) %>% 
+  mean()
+```
+
+- Die durchschnittliche Bewertung liegt bei `r round(ressort_leiter_mean, 2)`
+
+```{r out.width='70%', fig.asp=2/3}
+ressortleiter_zufriedenheit_plot <- ressort %>% 
+  select(1,5) %>% 
+  group_by(ressort_group) %>% 
+  summarise(score = mean(`5. Wie zufrieden bist Du mit Deinem Ressortleiter?`),
+            n = n()) %>% 
+  ggplot(aes(ressort_group, score)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  theme_classic() +
+  scale_y_continuous(breaks = seq(0,10,1)) +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18)) +
+  xlab("") +
+  ylab("") +
+  coord_flip() +
+  geom_text(aes(label = round(score, 2), stat = "identity", hjust = 2), color = "white", size = 4) +
+  geom_hline(yintercept = 5, linetype = "dotted")
+
+ggsave(here("plots/ressortleiter_zufriedenheit_plot.svg"), ressortleiter_zufriedenheit_plot, width = 12, height = 6)
+ressortleiter_zufriedenheit_plot
+```
+
+
+---
+
+## Ressort Akquise
+
+```{r out.width='70%', fig.asp=2/3}
+ressortleiter_begründungen(ressort, "Akquise", one_column = TRUE)
+```
+
+---
+
+## Ressort Finanzen und Recht
+
+```{r out.width='70%', fig.asp=2/3}
+ressortleiter_begründungen(ressort, "Finanzen und Recht")
+```
+
+---
+
+## Ressort Marketing
+
+```{r out.width='70%', fig.asp=2/3}
+ressortleiter_begründungen(ressort, "Marketing")
+```
+
+---
+
+## Ressort Personal
+
+```{r}
+ressortleiter_begründungen(ressort, "Personal")
+```
+
+---
+
+## Ressort Qualitätsmanagement
+
+```{r out.width='70%', fig.asp=2/3}
+ressortleiter_begründungen(ressort, "Qualitätsmanagement")
+```
+
+---
+
+
+class: inverse, center, middle
+
+# Sitzungen
+
+
+---
+
+
+## `r colnames(sitzungen)[1] %>% substring(4)`
+
+```{r}
+sitzungen_mean <- sitzungen %>% 
+  extract2(1) %>% 
+  mean()
+```
+
+- Die durchschnittliche Bewertung liegt bei `r round(sitzungen_mean, 2)`
+---
+
+## `r colnames(sitzungen)[2] %>% substring(4)`
+
+```{r}
+sitzungen %>% 
+  extract2(2) %>% 
+  na.omit() %>% 
+  knitr::kable(col.names = NULL) %>% 
+  column_spec(1, width_min = '7.8in') %>% 
+  kable_styling(font_size = 12)
+```
+
+---
+
+## `r colnames(sitzungen)[3] %>% substring(4)`
+
+```{r}
+sitzungen %>% 
+  extract2(3) %>% 
+  na.omit() %>% 
+  knitr::kable(col.names = NULL) %>% 
+  column_spec(1, width_min = '7.8in') %>% 
+  kable_styling(font_size = 12)
+```
+
+---
+
+
+
+class: inverse, center, middle
+
+# Teambuilding
+
+
+---
+
+
+
+## `r colnames(teambuilding)[1] %>% substring(4)`
+
+```{r}
+teambuilding_in_mean <- teambuilding %>% 
+  extract2(1) %>% 
+  mean()
+```
+
+- Die durchschnittliche Bewertung liegt bei `r round(teambuilding_in_mean, 2)`
+
+## `r colnames(teambuilding)[3] %>% substring(4)`
+
+```{r}
+teambuilding %>% 
+  extract2(3) %>% 
+  na.omit() %>% 
+  knitr::kable(col.names = NULL) %>% 
+  column_spec(1, width_min = '7.8in') %>% 
+  kable_styling(font_size = 12)
+```
+
+---
+
+## `r colnames(teambuilding)[4] %>% substring(4)`
+
+```{r}
+teambuilding_out_mean <- teambuilding %>% 
+  extract2(4) %>% 
+  mean(na.rm = TRUE)
+```
+
+- Die durchschnittliche Bewertung liegt bei `r round(teambuilding_out_mean, 2)`
+
+## `r colnames(teambuilding)[5] %>% substring(4)`
+
+```{r}
+teambuilding %>% 
+  extract2(5) %>% 
+  na.omit() %>% 
+  knitr::kable(col.names = NULL) %>% 
+  column_spec(1, width_min = '7.8in') %>% 
+  kable_styling(font_size = 12)
+```
+
+
+
+
+---
+
+
+class: inverse, center, middle
+
+# Projekt Präferenzen
+
+
+
+
+
+---
+
+
+class: inverse, center, middle
+
+# Projektarbeit
+
+
+
+
+
+
+
+---
+
+class: inverse, center, middle
+
+# Zufriedenheit mit Projektleitung
+
+
+---
+
+
+class: inverse, center, middle
+
+# Projektleiter Befragung
+
+
+
+---
+
+
+class: inverse, center, middle
+
+# Zufriedenheit mit der Mitgliederzufriedenheitsumfrage
+
+
+
+
+---
+
+class: inverse, center, middle
+
+# Feedback
+
+
+---
+
+## `r colnames(feedback)[1] %>% substring(4)`
+
+
+```{r}
+feedback %>% 
+  extract2(1) %>% 
+  na.omit() %>% 
+  kable(col.names = NULL) %>% 
+  column_spec(1, width_min = '7.8in') %>% 
+  kable_styling(font_size = 12)
+```
+
