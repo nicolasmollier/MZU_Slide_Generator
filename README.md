@@ -24,11 +24,15 @@ Der Inhalt des Ordners sollte wie folgt aussehen:
 
 ![image](git_plots/screenshot_repo_download_4.png)
 
+## Antworten der Umfrage herunterladen 
+
 4. Lade die Ergebnisse der Umfrage herunter, die mit der Vorlage *MZU_Vorlage_MZU_Generator* erstellt wurde (https://docs.google.com/forms/d/1H9aMkMYazCJUuGxSp_PbZURgpABJs_KrQUux8jZMuRg/edit), in den Ornder *data* als *csv Datei* herunter. Verwende den Dateinamen *umfrage.csv* (Hintergrund: Das Script *MZU_Slide_Generator.Rmd* erwartet die Umfrage-Antworten in einer Datei namens *umfrage.csv*) 
 
 ![image](git_plots/screenshot_umfrage_download.png)
 
 ![image](git_plots/screenshot_umfrage_download.png)
+
+## Slides erzeugen
 
 5. Öffne das R-Projekt *MZU_Slide_Generator.Rproj* 
 
