@@ -4,6 +4,7 @@ institute: "InOne Consult"
 date: "`r Sys.Date()`"
 output:
   xaringan::moon_reader:
+    self_contained: true
     lib_dir: libs
     nature:
       highlightStyle: github
@@ -28,6 +29,9 @@ library(tidyverse)
 library(magrittr)
 library(kableExtra)
 library(here)
+library(janitor)
+library(patchwork)
+library(gridExtra)
 ```
 
 ```{r message=FALSE, warning=FALSE}
@@ -36,13 +40,13 @@ df <- read_csv("data/umfrage.csv")
 zufriedenheit_allgemein <- df[2:4] 
 vorstand <- df[5:11] 
 ressort <- df[12:18] 
-sitzungen <- df[19:21]
-teambuilding <- df[22:26]
-projekt_preferences <- df[27:30]
-projekt_arbeit <- df[31:34]
-projektleitung <- df[35:42]
-mzu_bewertung <- df[43:44]
-feedback <- df[45]
+sitzungen <- df[19:22]
+teambuilding <- df[23:27]
+projekt_preferences <- df[28:32]
+projekt_arbeit <- df[33:36]
+projektleitung <- df[37:44]
+mzu_bewertung <- df[45:46]
+feedback <- df[47]
 ```
 
 
@@ -53,12 +57,19 @@ class: inverse, center, middle
 
 ---
 
+<style>
+
+.dataTables_wrapper {
+  font-size: 0.7em;
+}
+</style>
+
 ## `r colnames(zufriedenheit_allgemein)[1] %>% substring(4)`
 
 ```{r}
 zufriedenheit_allgemein_mean <- zufriedenheit_allgemein %>% 
   extract2(1) %>% 
-  mean()
+  mean(na.rm = TRUE)
 ```
 
 
@@ -67,19 +78,24 @@ zufriedenheit_allgemein_mean <- zufriedenheit_allgemein %>%
 promoter <- zufriedenheit_allgemein %>% 
   extract2(1) %>% 
   larger_smaller_than(8) %>% 
-  mean()
+  mean(na.rm = TRUE)
 
 passives <- zufriedenheit_allgemein %>% 
   extract2(1) %>% 
   between(7, 8) %>% 
-  mean()
+  mean(na.rm = TRUE)
 
 detractor <- zufriedenheit_allgemein %>% 
   extract2(1) %>% 
   larger_smaller_than(7, larger = FALSE) %>% 
-  mean()
+  mean(na.rm = TRUE)
 
 nps <- promoter - detractor
+
+n_1 <- zufriedenheit_allgemein %>% 
+  extract2(1) %>% 
+  na.omit() %>% 
+  length()
 ```
 
 - Die durchschnittliche Bewertung liegt bei `r round(zufriedenheit_allgemein_mean, 2)` von 10.
@@ -88,19 +104,60 @@ nps <- promoter - detractor
 
 - Daraus ergibt sich ein NPS von `r scales::percent(nps, 0.1)`.
 
+</br> 
+
+```{r out.width='100%', fig.asp=1/8}
+zufriedenheit_allgemein %>% 
+  extract2(1) %>% 
+  data.frame(score = .) %>%
+  mutate(
+    group = case_when(
+      score > 8 ~ "Promoter",
+      score < 7 ~ "Detractor",
+      TRUE ~ "Passives"
+    ),
+    group = factor(group, levels = c("Detractor", "Passives", "Promoter"))
+  ) %>% 
+  count(group) %>% 
+  mutate(prop = n / sum(n)) %>% 
+  ggplot(aes(x = 0.1, y = prop, fill = group)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  scale_fill_manual(values=c("orangered", "grey", "royalblue4")) +
+  coord_flip() +
+  theme_void() +
+  theme(axis.text.x = element_text(size = 10),
+        plot.title = element_text(size = 18),
+        axis.title = element_blank(),
+        legend.title = element_blank()) +
+  ylab("Anteil in %") +
+  scale_y_continuous(labels = scales::percent, breaks = seq(0, 1, 0.1)) 
+
+```
+
+.footnote[
+[1] Stichprobenumfang: `r n_1`
+]
 
 ---
 
 ## `r colnames(zufriedenheit_allgemein)[2] %>% substring(4)`
 
-
 ```{r}
-zufriedenheit_allgemein %>% 
+n_2 <- zufriedenheit_allgemein %>% 
   extract2(2) %>% 
   na.omit() %>% 
-  knitr::kable(col.names = NULL) %>% 
-  column_spec(1, width_min = '7.8in') %>% 
-  kable_styling(font_size = 12)
+  length()
+```
+
+
+```{r }
+zufriedenheit_allgemein %>% 
+  extract(2) %>% 
+  na.omit() %>% 
+  DT::datatable(
+    colnames = rep("", ncol(.)),
+    options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+  ) 
 ```
 
 ---
@@ -108,13 +165,22 @@ zufriedenheit_allgemein %>%
 ## `r colnames(zufriedenheit_allgemein)[3] %>% substring(4)`
 
 ```{r}
-zufriedenheit_allgemein %>% 
+n_3 <- zufriedenheit_allgemein %>% 
   extract2(3) %>% 
   na.omit() %>% 
-  knitr::kable(col.names = NULL) %>% 
-  column_spec(1, width_min = '7.8in') %>% 
-  kable_styling(font_size = 12)
+  length()
 ```
+
+```{r}
+zufriedenheit_allgemein %>% 
+  extract(3) %>% 
+  na.omit() %>% 
+  DT::datatable(
+    colnames = rep("", ncol(.)),
+    options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+  ) 
+```
+
 
 
 ---
@@ -131,18 +197,23 @@ class: inverse, center, middle
 vorstand <- vorstand %>% 
   filter(`Bist du Vorstandvorsitzende/-r (1V, 2V)` == "Nein") 
 
-
 vorstand_mean <- vorstand %>% 
   extract2(2) %>% 
-  mean()
+  mean(na.rm = TRUE)
+
+n_4 <- vorstand %>% 
+  extract2(2) %>% 
+  na.omit() %>% 
+  length()
 ```
+
 
 - Die durchschnittliche Bewertung liegt bei `r round(vorstand_mean, 2)`
 
 
 <br/>
 
-```{r out.width='70%', fig.asp=2/3}
+```{r out.width='70%', fig.asp=2/4}
 df_plot <- vorstand %>% 
   extract2(2) %>% 
   data_frame(score = .) %>% 
@@ -169,27 +240,47 @@ v1_plot <- df_plot %>%
 ggsave(here("plots/v1_plot.svg"), v1_plot, width = 12, height = 6)
 v1_plot
 ```
+
+.footnote[
+[1] Stichprobenumfang: `r n_4`
+]
+
 ---
 
 ## `r colnames(vorstand)[3] %>% substring(4) %>% str_sub(1,nchar(.)-2)`
 
 ```{r}
-vorstand %>% 
+n_5 <- vorstand %>% 
   extract2(3) %>% 
   na.omit() %>% 
-  knitr::kable(col.names = NULL) %>% 
-  column_spec(1, width_min = '7.8in') %>% 
-  kable_styling(font_size = 12) 
+  length()
 ```
+
+
+```{r}
+vorstand %>% 
+  extract(3) %>% 
+  na.omit() %>% 
+  DT::datatable(
+    colnames = rep("", ncol(.)),
+    options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+  ) 
+```
+
 
 ---
 
 ## `r colnames(vorstand)[4] %>% substring(4)`
 
 ```{r}
+n_6 <- vorstand %>% 
+  extract2(4) %>% 
+  na.omit() %>% 
+  length()
+
 vorstand_2_mean <- vorstand %>% 
   extract2(4) %>% 
-  mean()
+  mean(na.rm = TRUE)
 ```
 
 - Die durchschnittliche Bewertung liegt bei `r round(vorstand_2_mean, 2)`
@@ -197,7 +288,7 @@ vorstand_2_mean <- vorstand %>%
 <br/>
 
 
-```{r out.width='70%', fig.asp=2/3}
+```{r out.width='70%', fig.asp=2/4}
 df_plot <- vorstand %>% 
   extract2(4) %>% 
   data_frame(score = .) %>% 
@@ -225,28 +316,44 @@ ggsave(here("plots/v2_plot.svg"), v2_plot, width = 12, height = 6)
 v2_plot
 ```
 
+.footnote[
+[1] Stichprobenumfang: `r n_6`
+]
 
 ---
 
 ## `r colnames(vorstand)[5] %>% substring(4)`
 
 ```{r}
-vorstand %>% 
+n_7 <- vorstand %>% 
   extract2(5) %>% 
   na.omit() %>% 
-  knitr::kable(col.names = NULL) %>% 
-  column_spec(1, width_min = '7.8in') %>% 
-  kable_styling(font_size = 12)
+  length()
+
+vorstand %>% 
+  extract(5) %>% 
+  na.omit() %>% 
+  DT::datatable(
+    colnames = rep("", ncol(.)),
+    options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+  ) 
 ```
+
+
 
 ---
 
 ## `r colnames(vorstand)[6] %>% substring(4)`
 
 ```{r}
+n_8 <- vorstand %>% 
+  extract2(6) %>% 
+  na.omit() %>% 
+  length()
+
 vorstand_info_mean <- vorstand %>% 
   extract2(6) %>% 
-  mean()
+  mean(na.rm = TRUE)
 ```
 
 - Die durchschnittliche Bewertung liegt bei `r round(vorstand_info_mean, 2)`
@@ -254,7 +361,7 @@ vorstand_info_mean <- vorstand %>%
 <br/>
 
 
-```{r out.width='70%', fig.asp=2/3}
+```{r out.width='70%', fig.asp=2/4}
 df_plot <- vorstand %>% 
   extract2(6) %>% 
   data_frame(score = .) %>% 
@@ -282,6 +389,10 @@ ggsave(here("plots/vorstand_info_plot.svg"), vorstand_info_plot, width = 12, hei
 vorstand_info_plot
 ```
 
+.footnote[
+[1] Stichprobenumfang: `r n_8`
+]
+
 ---
 
 ## `r colnames(vorstand)[7] %>% substring(4)`
@@ -292,15 +403,25 @@ all_na <- vorstand %>%
   is.na() %>% 
   all()
 
+n_9 <- vorstand %>% 
+  extract2(7) %>% 
+  na.omit() %>% 
+  length()
+
 if(!all_na){
   vorstand %>% 
-    extract2(7) %>% 
+    extract(7) %>% 
     na.omit() %>% 
-    knitr::kable(col.names = NULL) %>% 
-    column_spec(1, width_min = '7.8in') %>% 
-    kable_styling(font_size = 12)
+    DT::datatable(
+      colnames = rep("", ncol(.)),
+      options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+    ) 
 }
 ```
+
+.footnote[
+[1] Stichprobenumfang: `r n_9`
+]
 
 ---
 
@@ -316,20 +437,37 @@ class: inverse, center, middle
 ```{r}
 ressort <- ressort %>% 
   rename(ressort_group = `1. In welchem Ressort bist Du?`)
+
+n_10 <- ressort %>% 
+  extract2(1) %>% 
+  na.omit() %>% 
+  length()
 ```
 
-```{r out.width='70%', fig.asp=2/3}
-ressort %>% 
+</br>
+
+```{r out.width='80%', fig.asp=2/4}
+df_plot <- ressort %>% 
   extract(1) %>% 
-  ggplot(aes(ressort_group)) +
-  geom_bar(width = 0.6, fill = "royalblue4") +
+  count(ressort_group) %>% 
+  mutate(
+    prop = (n / sum(n)) * 100,
+    limit_for_y_axis = max(prop) * 1.20
+  ) 
+
+df_plot %>% 
+  ggplot(aes(ressort_group, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
   theme_classic() +
-  scale_y_continuous(breaks = seq(0,10,1)) +
+  scale_y_continuous(breaks = seq(0,30,10), limits = c(0, max(df_plot$limit_for_y_axis))) +
   theme(axis.text = element_text(size = 16),
-        plot.title = element_text(size = 18)) +
+        plot.title = element_text(size = 18),
+        axis.title = element_text(size = 16)) +
   xlab("") +
-  ylab("") +
-  coord_flip()
+  ylab("Anteil in %") +
+  coord_flip() +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), stat = "identity", hjust = -.1), size = 5)
+
 ```
 
 
@@ -351,6 +489,9 @@ ggsave(here("plots/ressortverteilung.svg"), ressortverteilung_plot, width = 12, 
 ressortverteilung_plot
 ```
 
+.footnote[
+[1] Stichprobenumfang: `r n_10`
+]
 
 ---
 
@@ -359,7 +500,12 @@ ressortverteilung_plot
 ```{r}
 ressort_mean <- ressort %>% 
   extract2(2) %>% 
-  mean()
+  mean(na.rm = TRUE)
+
+n_11 <- ressort %>% 
+  extract2(2) %>% 
+  na.omit() %>% 
+  length()
 ```
 
 - Die durchschnittliche Bewertung liegt bei `r round(ressort_mean, 2)`
@@ -389,24 +535,21 @@ ggsave(here("plots/ressort_zufriedenheit_plot.svg"), ressort_zufriedenheit_plot,
 ressort_zufriedenheit_plot
 ```
 
+.footnote[
+[1] Stichprobenumfang: `r n_11`
+]
 
 ---
 
 ## Ressort Akquise
 
+
 ```{r out.width='70%', fig.asp=2/3}
-ressort_begründungen(ressort, "Akquise")
+ressort_begründungen(ressort, "Akquise") 
 ```
 
 ---
 
-## Ressort Finanzen und Recht
-
-```{r out.width='70%', fig.asp=2/3}
-ressort_begründungen(ressort, "Finanzen und Recht")
-```
-
----
 
 ## Ressort Marketing
 
@@ -450,7 +593,12 @@ ressort_leiter <- ressort %>%
 
 ressort_leiter_mean <- ressort_leiter %>% 
   extract2(6) %>% 
-  mean()
+  mean(na.rm = TRUE)
+
+n_12 <- ressort_leiter %>% 
+  extract2(6) %>% 
+  na.omit() %>% 
+  length()
 ```
 
 - Die durchschnittliche Bewertung liegt bei `r round(ressort_leiter_mean, 2)`
@@ -481,20 +629,16 @@ ressortleiter_zufriedenheit_plot
 ```
 
 
+.footnote[
+[1] Stichprobenumfang: `r n_12`
+]
+
 ---
 
 ## Ressort Akquise
 
 ```{r out.width='70%', fig.asp=2/3}
 ressortleiter_begründungen(ressort_leiter, "Akquise", one_column = TRUE)
-```
-
----
-
-## Ressort Finanzen und Recht
-
-```{r out.width='70%', fig.asp=2/3}
-ressortleiter_begründungen(ressort_leiter, "Finanzen und Recht")
 ```
 
 ---
@@ -538,9 +682,47 @@ class: inverse, center, middle
 sitzungen_mean <- sitzungen %>% 
   extract2(1) %>% 
   mean(na.rm = TRUE)
+
+n_13 <- sitzungen %>% 
+  extract2(1) %>% 
+  na.omit() %>% 
+  length()
 ```
 
 - Die durchschnittliche Bewertung liegt bei `r round(sitzungen_mean, 2)`
+
+<br/>
+
+```{r out.width='70%', fig.asp=2/4}
+df_plot <- sitzungen %>% 
+  extract2(1) %>% 
+  data_frame(score = .) %>% 
+  mutate(score = factor(score)) %>% 
+  count(score) %>% 
+  mutate(
+    prop = (n / sum(n)) * 100,
+    limit_for_y_axis = max(prop) * 1.05
+  ) 
+
+df_plot %>% 
+  ggplot(aes(score, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  scale_y_continuous(limits = c(0, max(df_plot$limit_for_y_axis))) +
+  theme_classic() +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18),
+        axis.title = element_text(size = 16)) +
+  xlab("Zufriedenheit von 1 (sehr unzufrieden) bis 5 (sehr zufrieden)") +
+  ylab("Anteil in %") +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), vjust = -.5), size = 5)
+
+
+```
+
+
+.footnote[
+[1] Stichprobenumfang: `r n_13`
+]
 ---
 
 ## `r colnames(sitzungen)[2] %>% substring(4)`
@@ -553,11 +735,12 @@ all_na <- sitzungen %>%
 
 if(!all_na){
   sitzungen %>% 
-  extract2(2) %>% 
+  extract(2) %>% 
   na.omit() %>% 
-  knitr::kable(col.names = NULL) %>% 
-  column_spec(1, width_min = '7.8in') %>% 
-  kable_styling(font_size = 12)
+  DT::datatable(
+    colnames = rep("", ncol(.)),
+    options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+  ) 
 }
 
 ```
@@ -574,17 +757,39 @@ all_na <- sitzungen %>%
 
 if(!all_na){
   sitzungen %>% 
-  extract2(3) %>% 
+  extract(3) %>% 
   na.omit() %>% 
-  knitr::kable(col.names = NULL) %>% 
-  column_spec(1, width_min = '7.8in') %>% 
-  kable_styling(font_size = 12)
+  DT::datatable(
+    colnames = rep("", ncol(.)),
+    options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+  ) 
 }
 
 ```
 
 ---
 
+## `r colnames(sitzungen)[4] %>% substring(4)`
+
+```{r}
+all_na <- sitzungen %>% 
+  extract2(4) %>% 
+  is.na() %>% 
+  all()
+
+if(!all_na){
+  sitzungen %>% 
+  extract(4) %>% 
+  na.omit() %>% 
+  DT::datatable(
+    colnames = rep("", ncol(.)),
+    options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+  ) 
+}
+
+```
+
+---
 
 
 class: inverse, center, middle
@@ -602,9 +807,106 @@ class: inverse, center, middle
 teambuilding_in_mean <- teambuilding %>% 
   extract2(1) %>% 
   mean(na.rm = TRUE)
+
+n_14 <- teambuilding %>% 
+  extract2(1) %>% 
+  na.omit() %>% 
+  length()
 ```
 
 - Die durchschnittliche Bewertung liegt bei `r round(teambuilding_in_mean, 2)`
+
+</br>
+
+```{r out.width='70%', fig.asp=2/4}
+df_plot <- teambuilding %>% 
+  extract2(1) %>% 
+  data_frame(score = .) %>% 
+  mutate(score = factor(score)) %>% 
+  count(score) %>% 
+  mutate(
+    prop = (n / sum(n)) * 100,
+    limit_for_y_axis = max(prop) * 1.05
+  ) 
+
+df_plot %>% 
+  ggplot(aes(score, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  scale_y_continuous(limits = c(0, max(df_plot$limit_for_y_axis))) +
+  theme_classic() +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18),
+        axis.title = element_text(size = 16)) +
+  xlab("Zufriedenheit von 1 (sehr unzufrieden) bis 5 (sehr zufrieden)") +
+  ylab("Anteil in %") +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), vjust = -.5), size = 5)
+```
+
+
+.footnote[
+[1] Stichprobenumfang: `r n_14`
+]
+
+
+
+
+---
+
+
+
+
+## `r colnames(teambuilding)[2] %>% substring(4)`
+
+```{r}
+teambuildindg_zeit <- teambuilding %>% 
+  extract2(2) %>% 
+  mean(na.rm = TRUE)
+
+n_14_2 <- teambuilding %>% 
+  extract2(2) %>% 
+  na.omit() %>% 
+  length()
+```
+
+- Die durchschnittliche Bewertung liegt bei `r round(teambuildindg_zeit, 2)`
+
+
+</br>
+
+```{r out.width='70%', fig.asp=2/4}
+df_plot <- teambuilding %>% 
+  extract2(2) %>% 
+  data_frame(score = .) %>% 
+  mutate(score = factor(score)) %>% 
+  count(score) %>% 
+  mutate(
+    prop = (n / sum(n)) * 100,
+    limit_for_y_axis = max(prop) * 1.05
+  ) 
+
+df_plot %>% 
+  ggplot(aes(score, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  scale_y_continuous(limits = c(0, max(df_plot$limit_for_y_axis))) +
+  theme_classic() +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18),
+        axis.title = element_text(size = 16)) +
+  xlab("von 1 (zu wenig) bis 5 (zu viel)") +
+  ylab("Anteil in %") +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), vjust = -.5), size = 5)
+
+
+```
+
+
+.footnote[
+[1] Stichprobenumfang: `r n_14_2`
+]
+
+
+---
+
 
 ## `r colnames(teambuilding)[3] %>% substring(4)`
 
@@ -616,11 +918,12 @@ all_na <- teambuilding %>%
 
 if(!all_na){
   teambuilding %>% 
-  extract2(3) %>% 
+  extract(3) %>% 
   na.omit() %>% 
-  knitr::kable(col.names = NULL) %>% 
-  column_spec(1, width_min = '7.8in') %>% 
-  kable_styling(font_size = 12)
+  DT::datatable(
+    colnames = rep("", ncol(.)),
+    options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+  ) 
 }
 ```
 
@@ -632,9 +935,49 @@ if(!all_na){
 teambuilding_out_mean <- teambuilding %>% 
   extract2(4) %>% 
   mean(na.rm = TRUE)
+
+n_15 <- teambuilding %>% 
+  extract2(4) %>% 
+  na.omit() %>% 
+  length()
 ```
 
 - Die durchschnittliche Bewertung liegt bei `r round(teambuilding_out_mean, 2)`
+
+</br>
+
+```{r out.width='70%', fig.asp=2/4}
+df_plot <- teambuilding %>% 
+  extract2(4) %>% 
+  data_frame(score = .) %>% 
+  mutate(score = factor(score)) %>% 
+  count(score) %>% 
+  mutate(
+    prop = (n / sum(n)) * 100,
+    limit_for_y_axis = max(prop) * 1.05
+  ) 
+
+df_plot %>% 
+  ggplot(aes(score, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  scale_y_continuous(limits = c(0, max(df_plot$limit_for_y_axis))) +
+  theme_classic() +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18),
+        axis.title = element_text(size = 16)) +
+  xlab("Zufriedenheit von 1 (sehr unzufrieden) bis 5 (sehr zufrieden)") +
+  ylab("Anteil in %") +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), vjust = -.5), size = 5)
+
+
+```
+
+
+.footnote[
+[1] Stichprobenumfang: `r n_15`
+]
+
+---
 
 ## `r colnames(teambuilding)[5] %>% substring(4)`
 
@@ -646,11 +989,12 @@ all_na <- teambuilding %>%
 
 if(!all_na){
   teambuilding %>% 
-    extract2(5) %>% 
+    extract(5) %>% 
     na.omit() %>% 
-    knitr::kable(col.names = NULL) %>% 
-    column_spec(1, width_min = '7.8in') %>% 
-    kable_styling(font_size = 12)
+    DT::datatable(
+    colnames = rep("", ncol(.)),
+    options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+  ) 
 }
 ```
 
@@ -669,20 +1013,75 @@ class: inverse, center, middle
 
 ## `r colnames(projekt_preferences)[1] %>% substring(4)`
 
-```{r out.width='70%', fig.asp=2/3}
-df_plot <- projekt_preferences %>% 
-  rename(projekt_art = `1. Welche Art von Projekt interessiert dich am meisten?`) %>% 
-  mutate(
-    projekt_art = factor(projekt_art)  
-  ) %>% 
+</br>
+
+
+```{r out.width='80%', fig.asp=2/4}
+df_plot1 <- projekt_preferences %>% 
+  extract2(1) %>% 
+  data_frame(projekt_art = .) %>%   
+    mutate(
+      projekt_art = factor(projekt_art)  
+    ) %>% 
   count(projekt_art) %>% 
   mutate(
     prop = n / sum(n) * 100,
     limit_for_y_axis = max(prop) * 1.05
   ) 
 
-df_plot %>% 
+n_16 <- df_plot1 %>% 
+  extract2("n") %>% 
+  na.omit() %>% 
+  sum(na.rm = TRUE)
+
+df_plot1 %>% 
   ggplot(aes(projekt_art, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  theme_classic() +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18),
+        axis.title = element_text(size = 16)
+) +
+  xlab("") +
+  ylab("Anteil in %") +
+  scale_y_continuous(limits = c(0, max(df_plot1$limit_for_y_axis))) +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), vjust = -.5), size = 5)
+```
+
+
+.footnote[
+[1] Stichprobenumfang: `r n_16`
+]
+
+---
+
+## `r colnames(projekt_preferences)[2] %>% substring(4)`
+
+</br>
+
+```{r out.width='80%', fig.asp=2/4}
+df_plot2 <- projekt_preferences %>% 
+  extract2(2) %>% 
+  paste(collapse = ";") %>% 
+  str_split(";") %>% 
+  extract2(1) %>% 
+  data_frame(projekt_arbeit = .) %>%  
+  mutate(
+    projekt_arbeit = factor(projekt_arbeit)  
+  ) %>% 
+  count(projekt_arbeit) %>% 
+  mutate(
+    prop = n / sum(n) * 100,
+    limit_for_y_axis = max(prop) * 1.3
+  ) 
+
+n_16_2 <- df_plot2 %>% 
+  extract2("n") %>% 
+  na.omit() %>% 
+  sum(na.rm = TRUE)
+
+df_plot2 %>% 
+  ggplot(aes(fct_reorder(projekt_arbeit, prop), prop)) +
   geom_col(width = 0.6, fill = "royalblue4") +
   theme_classic() +
   theme(axis.text = element_text(size = 16),
@@ -690,8 +1089,86 @@ df_plot %>%
         axis.title = element_text(size = 16)) +
   xlab("") +
   ylab("Anteil in %") +
+  scale_y_continuous(limits = c(0, max(df_plot2$limit_for_y_axis))) +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), hjust = -.2), size = 5) +
+  coord_flip()
+```
+
+.footnote[
+[1] Stichprobenumfang: `r n_16_2`
+]
+
+---
+
+## `r colnames(projekt_preferences)[4] %>% substring(4)`
+
+
+```{r}
+projektauswahl_mean <- projekt_preferences %>% 
+  extract2(4) %>% 
+  mean(na.rm = TRUE)
+
+n_16_3 <- projekt_preferences %>% 
+  extract2(4)  %>% 
+  na.omit() %>% 
+  length()
+```
+
+- Die durchschnittliche Bewertung liegt bei `r round(projektauswahl_mean, 2)`
+
+</br>
+
+```{r out.width='70%', fig.asp=2/4}
+df_plot <- projekt_preferences %>% 
+  extract2(4) %>% 
+  data_frame(score = .) %>% 
+  mutate(score = factor(score)) %>% 
+  count(score) %>% 
+  mutate(
+    prop = (n / sum(n)) * 100,
+    limit_for_y_axis = max(prop) * 1.05
+  ) 
+
+df_plot %>% 
+  ggplot(aes(score, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
   scale_y_continuous(limits = c(0, max(df_plot$limit_for_y_axis))) +
+  theme_classic() +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18),
+        axis.title = element_text(size = 16)) +
+  xlab("Zufriedenheit von 1 (sehr unzufrieden) bis 5 (sehr zufrieden)") +
+  ylab("Anteil in %") +
   geom_text(aes(label = scales::percent(prop/100, 0.1), vjust = -.5), size = 5)
+
+
+```
+
+
+.footnote[
+[1] Stichprobenumfang: `r n_16_3`
+]
+
+
+---
+
+## `r colnames(teambuilding)[5] %>% substring(4)`
+
+```{r}
+all_na <- projekt_preferences %>% 
+  extract2(5) %>% 
+  is.na() %>% 
+  all()
+
+if(!all_na){
+  projekt_preferences %>% 
+    extract(5) %>% 
+    na.omit() %>% 
+    DT::datatable(
+    colnames = rep("", ncol(.)),
+    options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+  ) 
+}
 ```
 
 
@@ -709,8 +1186,17 @@ class: inverse, center, middle
 
 ```{r}
 projekt_arbeit <- projekt_arbeit %>% 
-  rename(projekt = `5. Arbeitest Du zurzeit in einem Projektteam?`) %>% 
+  rename(projekt = `6. Arbeitest Du zurzeit in einem Projektteam?`) %>% 
   filter(projekt != "ich arbeite zurzeit nicht in einem Projektteam")
+
+n_17 <- projekt_arbeit %>% 
+  select(2) %>% 
+  na.omit() %>% 
+  nrow()
+n_18 <- projekt_arbeit %>% 
+  select(3) %>% 
+  na.omit() %>% 
+  nrow()
 ```
 
 ```{r}
@@ -727,6 +1213,75 @@ zusammenarbeit_mean <- projekt_arbeit %>%
 
 - Die Zufriedenheit mit der Zusammenarbeit des Teams wird durchschnittlich mit `r round(zusammenarbeit_mean, 2)` bewertet.
 
+</br>
+
+```{r out.width='90%', fig.asp=2/5}
+df_plot1 <- projekt_arbeit %>% 
+  extract2(2) %>% 
+  data_frame(score = .) %>% 
+  mutate(score = factor(score)) %>% 
+  count(score) %>% 
+  mutate(
+    prop = (n / sum(n)) * 100,
+    limit_for_y_axis = max(prop) * 1.07
+  ) 
+
+df_plot2 <- projekt_arbeit %>% 
+  extract2(3) %>% 
+  data_frame(score = .) %>% 
+  mutate(score = factor(score)) %>% 
+  count(score) %>% 
+  mutate(
+    prop = (n / sum(n)) * 100,
+    limit_for_y_axis = max(prop) * 1.07
+  ) 
+
+plot1 <- df_plot1 %>% 
+  ggplot(aes(score, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  scale_y_continuous(limits = c(0, max(df_plot1$limit_for_y_axis))) +
+  theme_classic() +
+  theme(
+    axis.text = element_text(size = 12),
+    plot.title = element_text(size = 10),
+    axis.title = element_text(size = 10),
+    plot.margin=unit(c(0,1.2,1,0), "cm")
+  ) +
+  xlab("Zufriedenheit von 1 bis 5") +
+  ylab("Anteil in %") +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), vjust = -.5), size = 3) +
+  ggtitle("Projektarbeit Allgemein")
+
+
+plot2 <- df_plot2 %>% 
+  ggplot(aes(score, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  scale_y_continuous(limits = c(0, max(df_plot2$limit_for_y_axis))) +
+  theme_classic() +
+  theme(
+    axis.text = element_text(size = 12),
+    plot.title = element_text(size = 10),
+    axis.title = element_text(size = 10),
+    plot.margin=unit(c(0,0,1,1.2), "cm")
+) +
+  xlab("Zufriedenheit von 1 bis 5") +
+  ylab("Anteil in %") +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), vjust = -.5), size = 3) +
+  ggtitle("Zusammenarbeit im Team")
+
+
+grid.arrange(
+  plot1, 
+  plot2, 
+  ncol=2
+)
+```
+
+.footnote[
+[1] Stichprobenumfang: `r n_17` </br>
+[2] Stichprobenumfang: `r n_18`
+]
+
 ---
 
 ## `r colnames(projekt_arbeit)[4] %>% substring(4)`
@@ -739,11 +1294,12 @@ all_na <- projekt_arbeit %>%
 
 if(!all_na){
   projekt_arbeit %>% 
-    extract2(4) %>% 
+    extract(4) %>% 
     na.omit() %>% 
-    knitr::kable(col.names = NULL) %>% 
-    column_spec(1, width_min = '7.8in') %>% 
-    kable_styling(font_size = 12)
+    DT::datatable(
+      colnames = rep("", ncol(.)),
+      options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+    ) 
 }
 ```
 
@@ -769,9 +1325,47 @@ projektleiter_bewertung <- projektleitung %>%
 projektleiter_mean <- projektleiter_bewertung %>% 
   extract2(1) %>% 
   mean(na.rm = TRUE)
+
+n_19 <- projektleiter_bewertung %>% 
+  extract2(1) %>% 
+  na.omit() %>% 
+  length()
 ```
 
 - Die Zufriedenheit mit der Projektleitung wird mit durchschnittlich `r round(projektleiter_mean, 2)` bewertet.
+
+</br>
+
+```{r out.width='70%', fig.asp=2/4}
+df_plot <- projektleiter_bewertung %>% 
+  extract2(1) %>% 
+  data_frame(score = .) %>% 
+  mutate(score = factor(score)) %>% 
+  count(score) %>% 
+  mutate(
+    prop = (n / sum(n)) * 100,
+    limit_for_y_axis = max(prop) * 1.05
+  ) 
+
+df_plot %>% 
+  ggplot(aes(score, prop)) +
+  geom_col(width = 0.6, fill = "royalblue4") +
+  scale_y_continuous(limits = c(0, max(df_plot$limit_for_y_axis))) +
+  theme_classic() +
+  theme(axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18),
+        axis.title = element_text(size = 16)) +
+  xlab("Zufriedenheit von 1 (sehr unzufrieden) bis 5 (sehr zufrieden)") +
+  ylab("Anteil in %") +
+  geom_text(aes(label = scales::percent(prop/100, 0.1), vjust = -.5), size = 5)
+
+
+```
+
+
+.footnote[
+[1] Stichprobenumfang: `r n_19`
+]
 
 ---
 
@@ -785,11 +1379,12 @@ all_na <- projektleiter_bewertung %>%
 
 if(!all_na){
   projektleiter_bewertung %>% 
-    extract2(2) %>% 
+    extract(2) %>% 
     na.omit() %>% 
-    knitr::kable(col.names = NULL) %>% 
-    column_spec(1, width_min = '7.8in') %>% 
-    kable_styling(font_size = 12)
+    DT::datatable(
+      colnames = rep("", ncol(.)),
+      options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+    ) 
 }
 ```
 
@@ -805,11 +1400,12 @@ all_na <- projektleiter_bewertung %>%
 
 if(!all_na){
   projektleiter_bewertung %>% 
-    extract2(3) %>% 
+    extract(3) %>% 
     na.omit() %>% 
-    knitr::kable(col.names = NULL) %>% 
-    column_spec(1, width_min = '7.8in') %>% 
-    kable_styling(font_size = 12)
+    DT::datatable(
+      colnames = rep("", ncol(.)),
+      options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+    ) 
 }
 ```
 
@@ -821,25 +1417,59 @@ class: inverse, center, middle
 
 ---
 
-## Feedback der Projektleiter
-
-
 ```{r}
 projektleiter_feedback <- projektleitung %>% 
   filter(`9. Bist Du Projektleiter/-in?` == "Ja") %>% 
   select(2:5)
 ```
 
+## `r colnames(projektleiter_feedback)[1]`
+
 ```{r}
 projektleiter_feedback %>% 
-        select(2:4) %>% 
-        kable() %>% 
-        column_spec(1:3, width_min = '2.6in') %>% 
-        kable_styling(font_size = 12, full_width = TRUE)
+        select(1) %>% 
+        DT::datatable(
+          options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+        ) 
 ```
 
+---
+
+## `r colnames(projektleiter_feedback)[2]`
+
+```{r}
+projektleiter_feedback %>% 
+        select(2) %>% 
+        DT::datatable(
+          options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+        ) 
+```
+
+---
+
+## `r colnames(projektleiter_feedback)[3]`
 
 
+```{r}
+projektleiter_feedback %>% 
+        select(3) %>% 
+        DT::datatable(
+          options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+        ) 
+```
+
+---
+
+## `r colnames(projektleiter_feedback)[4]`
+
+
+```{r}
+projektleiter_feedback %>% 
+        select(4) %>% 
+        DT::datatable(
+          options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+        ) 
+```
 
 ---
 
@@ -855,10 +1485,11 @@ class: inverse, center, middle
 
 ```{r}
 feedback %>% 
-  extract2(1) %>% 
+  extract(1) %>% 
   na.omit() %>% 
-  kable(col.names = NULL) %>% 
-  column_spec(1, width_min = '7.8in') %>% 
-  kable_styling(font_size = 12)
+  DT::datatable(
+      colnames = colnames(feedback)[1] %>% substring(4),
+      options = list(dom = 'tp', pageLength = 10, ordering = FALSE)
+    ) 
 ```
 
