@@ -60,7 +60,7 @@ Der Inhalt des Ordners sollte wie folgt aussehen:
 
 - Die fertige Präsentation öffnet sich dur Doppel-Klick auf *MZU_Slide_Generator.html* in deinem Browser 
 
-*MZU_Slide_Generator.html_2*
+![image](git_plots/screenshot_generated_html_2.png)
 
 
 
