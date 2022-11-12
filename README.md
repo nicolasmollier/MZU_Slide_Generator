@@ -42,7 +42,7 @@ Der Inhalt des Ordners sollte wie folgt aussehen:
 
 7. Erzeuge die Ergebnis-Präsentation
 
-- Nach den SChritten 1-6 sollte RStutio wie folt aussehen:
+- Nach den Schritten 1-6 sollte RStutio wie folt aussehen:
 
 ![image](git_plots/screenshot_slide_generation.png)
 
