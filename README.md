@@ -17,3 +17,8 @@ Um den MZU-Slide-Generator zu verwenden, musst du die Dateien aus diesem Reposit
 
 - Möglichkeit 2 
 
+1. Downloade das Repository
+
+![image](git_plots/screenshot_repo_download.png)
+
+2. Unzippe die heruntergeladene zip-Datei
